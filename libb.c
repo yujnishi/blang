@@ -15,13 +15,17 @@ int     (*c_chmod)(const char*,unsigned int);
 int     (*c_chown)(const char*,int,int);
 int     (*c_close)(int);
 int     (*c_creat)(const char*,unsigned int);
+int     (*c_dup)(int);
 int     (*c_execv)(const char*,const char*[]);
 void    (*c_exit)(int);
 int     (*c_fflush)(void*);
 int     (*c_fork)(void);
 int     (*c_fstat)(int,struct stat*);
 int     (*c_fputc)(int,void*);
+int     (*c_getchar)(void);
+int     (*c_getuid)(void);
 void*   (*c_localtime)(time_t*);
+int     (*c_pipe)(int*);
 int     (*c_printf)(const char*,...);
 int     (*c_putchar)(int);
 char*   (*c_setlocale)(int,const char*);
@@ -45,12 +49,16 @@ void __init() {
     c_chown      = dlsym(h,"chown");
     c_close      = dlsym(h,"close");
     c_creat      = dlsym(h,"creat");
+    c_dup        = dlsym(h,"dup");
     c_execv      = dlsym(h,"execv");
     c_exit       = dlsym(h,"exit");
     c_fork       = dlsym(h,"fork");
     c_fflush     = dlsym(h,"fflush");
     c_fputc      = dlsym(h,"fputc");
+    c_getchar    = dlsym(h,"getchar");
+    c_getuid     = dlsym(h,"getuid");
     c_localtime  = dlsym(h,"localtime");
+    c_pipe       = dlsym(h,"pipe");
     c_printf     = dlsym(h,"printf");
     c_putchar    = dlsym(h,"putchar");
     c_setlocale  = dlsym(h,"setlocale");
@@ -103,6 +111,11 @@ long b_ctime(long _t[],char* date) {
     c_strftime(date,17,"%b %d %H:%M:%S",tm);
     c_setlocale(LC_ALL,old_locale);
     return 0;
+}
+
+long b_dup(long fd) {
+    /* TODO テストコードなし */
+    return c_dup(fd);
 }
 
 long b_execl(char* cmd,...) {
@@ -176,13 +189,27 @@ long b_fstat(long fd,long* st) {
     return r;
 }
 
+long b_getchar() {
+    return c_getchar();
+}
+
+long b_getuid() {
+    return c_getuid();
+}
+
+long b_pipe(long fd[]) {
+    /* TODO テストコードなし */
+    int p[2];
+    int r;
+
+    r = c_pipe(p);
+    fd[0] = p[0];
+    fd[1] = p[1];
+    return r;
+}
+
 /*
 TODO
-char = getchar( ) ;
-    The next character form the standard input file is returned. The character `*e' is returned for an end-of-file. 
-id = getuid();
-
-    The user-ID of the current process is returned. (*) 
 error = gtty(file, ttystat);
 
     The teletype modes of the open file designated by file is returned in the 3-word vector ttstat. A negative number returned indicates an error. (*) 

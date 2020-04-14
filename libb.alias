@@ -5,11 +5,15 @@ chown:b_chown@PLT
 close:b_close@PLT
 creat:b_creat@PLT
 ctime:b_ctime@PLT
+dup:b_dup@PLT
 execl:b_execl@PLT
 execv:b_execv@PLT
 exit:b_exit@PLT
 fork:b_fork@PLT
 fstat:b_fstat@PLT
+getchar:b_getchar@PLT
+getuid:b_getuid@PLT
+pipe:b_pipe@PLT
 printf:b_printf@PLT
 putchar:b_putchar@PLT
 wait:b_wait@PLT
