@@ -9,6 +9,10 @@ typedef unsigned long time_t;
 void* dlopen(const char*,int);
 void* dlsym(void*,const char*);
 int syscall(int, ...);
+struct timeval {
+    time_t      tv_sec;     /* 秒 */
+    long        tv_usec;    /* マイクロ秒 */
+};
 
 int     (*c_chdir)(const char*);
 int     (*c_chmod)(const char*,unsigned int);
@@ -24,12 +28,14 @@ int     (*c_fstat)(int,struct stat*);
 int     (*c_fputc)(int,void*);
 int     (*c_getchar)(void);
 int     (*c_getuid)(void);
+int     (*c_gettimeofday)(struct timeval*,void*);
 void*   (*c_localtime)(time_t*);
 int     (*c_pipe)(int*);
 int     (*c_printf)(const char*,...);
 int     (*c_putchar)(int);
 char*   (*c_setlocale)(int,const char*);
 size_t  (*c_strftime)(char*,size_t,const char*,void*);
+int     (*c_unlink)(const char*);
 int     (*c_vprintf)(const char*,va_list);
 int     (*c_wait)(void*);
 long    (*c_write)(int,const void*,size_t);
@@ -44,28 +50,30 @@ void __init() {
     void* h;
 
     h = dlopen("/lib64/libc.so.6",0x00001/*RTLD_LAZY*/);
-    c_chdir      = dlsym(h,"chdir");
-    c_chmod      = dlsym(h,"chmod");
-    c_chown      = dlsym(h,"chown");
-    c_close      = dlsym(h,"close");
-    c_creat      = dlsym(h,"creat");
-    c_dup        = dlsym(h,"dup");
-    c_execv      = dlsym(h,"execv");
-    c_exit       = dlsym(h,"exit");
-    c_fork       = dlsym(h,"fork");
-    c_fflush     = dlsym(h,"fflush");
-    c_fputc      = dlsym(h,"fputc");
-    c_getchar    = dlsym(h,"getchar");
-    c_getuid     = dlsym(h,"getuid");
-    c_localtime  = dlsym(h,"localtime");
-    c_pipe       = dlsym(h,"pipe");
-    c_printf     = dlsym(h,"printf");
-    c_putchar    = dlsym(h,"putchar");
-    c_setlocale  = dlsym(h,"setlocale");
-    c_strftime   = dlsym(h,"strftime");
-    c_vprintf    = dlsym(h,"vprintf");
-    c_wait       = dlsym(h,"wait");
-    c_write      = dlsym(h,"write");
+    c_chdir         = dlsym(h,"chdir");
+    c_chmod         = dlsym(h,"chmod");
+    c_chown         = dlsym(h,"chown");
+    c_close         = dlsym(h,"close");
+    c_creat         = dlsym(h,"creat");
+    c_dup           = dlsym(h,"dup");
+    c_execv         = dlsym(h,"execv");
+    c_exit          = dlsym(h,"exit");
+    c_fork          = dlsym(h,"fork");
+    c_fflush        = dlsym(h,"fflush");
+    c_fputc         = dlsym(h,"fputc");
+    c_getchar       = dlsym(h,"getchar");
+    c_getuid        = dlsym(h,"getuid");
+    c_gettimeofday  = dlsym(h,"gettimeofday");
+    c_localtime     = dlsym(h,"localtime");
+    c_pipe          = dlsym(h,"pipe");
+    c_printf        = dlsym(h,"printf");
+    c_putchar       = dlsym(h,"putchar");
+    c_setlocale     = dlsym(h,"setlocale");
+    c_strftime      = dlsym(h,"strftime");
+    c_unlink        = dlsym(h,"unlink");
+    c_vprintf       = dlsym(h,"vprintf");
+    c_wait          = dlsym(h,"wait");
+    c_write         = dlsym(h,"write");
 
     // fstatは見つからないのでこの方法
     c_fstat = _fstat;
@@ -114,7 +122,6 @@ long b_ctime(long _t[],char* date) {
 }
 
 long b_dup(long fd) {
-    /* TODO テストコードなし */
     return c_dup(fd);
 }
 
@@ -208,6 +215,30 @@ long b_pipe(long fd[]) {
     return r;
 }
 
+long b_gtty(long fd,long res[]) {
+    /*
+     * TODO 3個値を返すらしい
+     * このうちどれを返すかは調べる必要あり
+     *
+     * unix由来のgttyの構造体
+     * struct sgttyb {
+     *   char    sg_ispeed;      // input speed
+     *   char    sg_ospeed;      // output speed
+     *   char    sg_erase;       // erase character
+     *   char    sg_kill;        // kill character
+     *   short   sg_flags;       // mode flags
+     * };
+     */
+//    struct termio buff;
+//    int r;
+
+//    r = ioctl(fd,&buf);
+    return 0;
+
+     
+}
+
+
 /*
 TODO
 error = gtty(file, ttystat);
@@ -252,17 +283,18 @@ error = stty(file, ttystat);
 time(timev);
 
     The current system time is returned in the 2-word vector timev. (*) 
-error = unlink(string);
-
-    The link specified by the string is removed. A negative number returned indicates an error. (*) 
-error = wait( );
-
-    The current process is suspended until one of its child processes terminates. At that time, the child's process-ID is returned. A negative number returned indicates an error. (*) 
-nwrite = write(file, buffer, count);
-
-    Count bytes are written out of the vector buffer on the open file designated by file. The actual number of bytes written are returned. A negative number returned indicates an error. (*) 
-
 */
+
+long b_time(long tm[]) {
+    // TODO no test code
+    int r;
+    struct timeval tv;
+
+    r = c_gettimeofday(&tv,NULL);
+    tm[0] = tv.tv_sec;
+    tm[1] = tv.tv_usec;
+    return r;
+}
 
 long b_printf(char* fmt,...) {
     va_list ap;
@@ -280,6 +312,10 @@ long b_putchar(long n) {
     if ( n > 0xff ) b_putchar(n>>8);
     c_putchar(n&0xff);
     return 0;
+}
+
+long b_unlink(char* name) {
+    return c_unlink(name);
 }
 
 long b_wait() {

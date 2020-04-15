@@ -16,5 +16,7 @@ getuid:b_getuid@PLT
 pipe:b_pipe@PLT
 printf:b_printf@PLT
 putchar:b_putchar@PLT
+time:b_time@PLT
+unlink:b_unlink@PLT
 wait:b_wait@PLT
 write:b_write@PLT

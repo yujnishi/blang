@@ -14,7 +14,7 @@ build: $(objs)
 	diff `basename $^ .res`.out $^ > $@
 
 %.res: %
-	LD_LIBRARY_PATH=.. ./$< > $@
+	LANG=C LD_LIBRARY_PATH=.. ./$< > $@
 
 %: %.s
 	gcc $^ -L.. -lb -o $@

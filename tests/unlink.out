@@ -1,0 +1,2 @@
+unlink.tmp
+ls: cannot access unlink.tmp: No such file or directory
