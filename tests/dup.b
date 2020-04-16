@@ -9,7 +9,7 @@ main() {
     close(1);
     dup(fd);
 
-    printf("Hello World.*n");
+    printf("hello, world*n");
     close(1);
     close(fd);
 

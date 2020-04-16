@@ -5,7 +5,7 @@ main() {
     auto fd,fname "fstat.tmp";
 
     fd = creat(fname,292); /* 0444 */
-    write(fd,"Hello World.",12);
+    write(fd,"hello, world",12);
     close(fd);
 
     fd = open(fname,O_RDONLY);

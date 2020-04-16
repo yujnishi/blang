@@ -848,7 +848,12 @@ int gencode_global(struct tree* def) {
     name = def->t.t1->s;
     if ( def->type == TREE_GLOBAL )
         if ( def->t.t2 == NULL ) printf("@%s = global i64",name);
-        else                     printf("@%s = global i64 %s",name,def->t.t2->s);
+        else {
+            char buf[1024];
+
+            gencode_val(buf,def->t.t2,1,0);
+            printf("@%s = global %s",name,buf);
+        }
     if ( def->type == TREE_GLOBAL_ARRAY )
         if ( def->t.t3 == NULL ) printf("@%s = global [%s x i64] zeroinitializer",name,def->t.t2->s);
         else                     printf("@%s = global [%s x i64] ",name,def->t.t2->s),gencode_ainit(def->t.t3);

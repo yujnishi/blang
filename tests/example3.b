@@ -53,5 +53,5 @@ loop :
 }
 
 main() {
-    _printf("Hello world. %d:%d*n",128,256,0,0,0,0,0,0,0);
+    _printf("hello, world. %d:%d*n",128,256,0,0,0,0,0,0,0);
 }

@@ -30,6 +30,7 @@ int     (*c_getchar)(void);
 int     (*c_getuid)(void);
 int     (*c_gettimeofday)(struct timeval*,void*);
 void*   (*c_localtime)(time_t*);
+int     (*c_link)(const char*,const char*);
 int     (*c_pipe)(int*);
 int     (*c_printf)(const char*,...);
 int     (*c_putchar)(int);
@@ -65,6 +66,7 @@ void __init() {
     c_getuid        = dlsym(h,"getuid");
     c_gettimeofday  = dlsym(h,"gettimeofday");
     c_localtime     = dlsym(h,"localtime");
+    c_link          = dlsym(h,"link");
     c_pipe          = dlsym(h,"pipe");
     c_printf        = dlsym(h,"printf");
     c_putchar       = dlsym(h,"putchar");
@@ -238,18 +240,25 @@ long b_gtty(long fd,long res[]) {
      
 }
 
+long b_lchar(char* s,long i,long c) {
+    int r;
+
+    r = c;
+    if ( c == -1 ) c = '\0';
+    s[i] = c;
+
+    return r;
+}
+
+long b_link(char* old,char* new) {
+    return c_link(old,new);
+}
 
 /*
 TODO
 error = gtty(file, ttystat);
 
     The teletype modes of the open file designated by file is returned in the 3-word vector ttstat. A negative number returned indicates an error. (*) 
-lchar(string, i, char);
-
-    The character char is stored in the i-th character of the string. 
-error = link(string1, string2);
-
-    The pathname specified by string2 is created such that it is a link to the existing file specified by string1. A negative number returned indicates an error. (*) 
 error = mkdir(string, mode);
 
     The directory specified by the string is made to exist with the specified access mode. A negative number returned indicates an error. (*) 
@@ -280,13 +289,9 @@ error = stat(string, status);
 error = stty(file, ttystat);
 
     The teletype modes of the open file designated by file is set from the 3-word vector ttystat. A negative number returned indicates an error. (*) 
-time(timev);
-
-    The current system time is returned in the 2-word vector timev. (*) 
 */
 
 long b_time(long tm[]) {
-    // TODO no test code
     int r;
     struct timeval tv;
 

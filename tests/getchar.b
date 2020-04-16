@@ -8,7 +8,7 @@ main() {
         close(1);
         dup(p[1]);
 
-        printf("hello world*n");
+        printf("hello, world*n");
     } else {
         close(0);
         dup(p[0]);
