@@ -462,6 +462,7 @@ struct tree* gencode_output(char* file,int line,char* op,...) {
     char buf[256];
     char* p;
 
+    isret = 0;
     ret = NULL;
     fi = stdout;
     va_start(ap,op);
@@ -770,13 +771,13 @@ struct tree* gencode_stmt(struct tree* stmt) {
         output("__la%d:",lnext);
         break;
     case RETURN:
-        isret = 1;
         if ( stmt->t.t1 ) {
             ret = gencode_stmt(stmt->t.t1);
             gencode_val(buf,ret,0,0);
             ret = NULL;
         } else strcpy(buf,"0");
         output("  ret i64 %s",buf);
+        isret = 1;
         is_pred = 1;
         getvnum();
         //set_block();
