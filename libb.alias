@@ -18,6 +18,7 @@ printf:b_printf@PLT
 putchar:b_putchar@PLT
 lchar:b_lchar@PLT
 link:b_link@PLT
+mkdir:b_mkdir@PLT
 time:b_time@PLT
 unlink:b_unlink@PLT
 wait:b_wait@PLT

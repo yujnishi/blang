@@ -26,4 +26,4 @@ build: $(objs)
 	../bb1 $< > $@
 
 clean:
-	rm -f $(cases) $(objs) *.ll *.s *.res *.tmp core.*
+	rm -fr $(cases) $(objs) *.ll *.s *.res *.tmp core.*

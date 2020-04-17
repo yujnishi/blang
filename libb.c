@@ -31,6 +31,7 @@ int     (*c_getuid)(void);
 int     (*c_gettimeofday)(struct timeval*,void*);
 void*   (*c_localtime)(time_t*);
 int     (*c_link)(const char*,const char*);
+int     (*c_mkdir)(const char*,unsigned int);
 int     (*c_pipe)(int*);
 int     (*c_printf)(const char*,...);
 int     (*c_putchar)(int);
@@ -67,6 +68,7 @@ void __init() {
     c_gettimeofday  = dlsym(h,"gettimeofday");
     c_localtime     = dlsym(h,"localtime");
     c_link          = dlsym(h,"link");
+    c_mkdir         = dlsym(h,"mkdir");
     c_pipe          = dlsym(h,"pipe");
     c_printf        = dlsym(h,"printf");
     c_putchar       = dlsym(h,"putchar");
@@ -252,6 +254,10 @@ long b_lchar(char* s,long i,long c) {
 
 long b_link(char* old,char* new) {
     return c_link(old,new);
+}
+
+long b_mkdir(char* dir,long mode) {
+    return c_mkdir(dir,mode);
 }
 
 /*
