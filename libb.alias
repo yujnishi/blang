@@ -19,6 +19,10 @@ putchar:b_putchar@PLT
 lchar:b_lchar@PLT
 link:b_link@PLT
 mkdir:b_mkdir@PLT
+open:b_open@PLT
+printn:b_printn@PLT
+seek:b_seek@PLT
+stat:b_stat@PLT
 time:b_time@PLT
 unlink:b_unlink@PLT
 wait:b_wait@PLT

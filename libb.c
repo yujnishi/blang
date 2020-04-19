@@ -32,11 +32,15 @@ int     (*c_gettimeofday)(struct timeval*,void*);
 void*   (*c_localtime)(time_t*);
 int     (*c_link)(const char*,const char*);
 int     (*c_mkdir)(const char*,unsigned int);
+int     (*c_open)(const char*,int mode);
 int     (*c_pipe)(int*);
 int     (*c_printf)(const char*,...);
 int     (*c_putchar)(int);
+long    (*c_read)(int,void*,size_t);
 char*   (*c_setlocale)(int,const char*);
+int     (*c_stat)(const char*,struct stat*);
 size_t  (*c_strftime)(char*,size_t,const char*,void*);
+long    (*c_lseek)(int,long,int);
 int     (*c_unlink)(const char*);
 int     (*c_vprintf)(const char*,va_list);
 int     (*c_wait)(void*);
@@ -44,6 +48,10 @@ long    (*c_write)(int,const void*,size_t);
 
 int _fstat(int fd,struct stat* st) {
     return syscall(SYS_fstat,fd,st);
+}
+
+int _stat(const char* fname,struct stat* st) {
+    return syscall(SYS_stat,fname,st);
 }
 
 
@@ -69,9 +77,12 @@ void __init() {
     c_localtime     = dlsym(h,"localtime");
     c_link          = dlsym(h,"link");
     c_mkdir         = dlsym(h,"mkdir");
+    c_open          = dlsym(h,"open");
     c_pipe          = dlsym(h,"pipe");
     c_printf        = dlsym(h,"printf");
     c_putchar       = dlsym(h,"putchar");
+    c_read          = dlsym(h,"read");
+    c_lseek         = dlsym(h,"lseek");
     c_setlocale     = dlsym(h,"setlocale");
     c_strftime      = dlsym(h,"strftime");
     c_unlink        = dlsym(h,"unlink");
@@ -81,6 +92,7 @@ void __init() {
 
     // fstatは見つからないのでこの方法
     c_fstat = _fstat;
+    c_stat  = _stat;
 }
 
 
@@ -161,10 +173,7 @@ long b_fork() {
     return c_fork();
 }
 
-long b_fstat(long fd,long* st) {
-    long r;
-    struct stat s;
-
+long _setstat(long* b_st,struct stat* c_st) {
     // TODO マニュアル見ると20項目ありそうだけど足りない。調べる
     //       struct stat {
     //           dev_t     st_dev;     /* ファイルがあるデバイスの ID */
@@ -182,20 +191,39 @@ long b_fstat(long fd,long* st) {
     //           time_t    st_mtime;   /* 最終修正時刻 */
     //           time_t    st_ctime;   /* 最終状態変更時刻 */
     //       };
+    b_st[ 0] = c_st->st_dev;
+    b_st[ 1] = c_st->st_ino;
+    b_st[ 2] = c_st->st_mode;
+    b_st[ 3] = c_st->st_nlink;
+    b_st[ 4] = c_st->st_uid;
+    b_st[ 5] = c_st->st_gid;
+    b_st[ 6] = c_st->st_rdev;
+    b_st[ 7] = c_st->st_size;
+    b_st[ 8] = c_st->st_blksize;
+    b_st[ 9] = c_st->st_blocks;
+    b_st[10] = c_st->st_atime;
+    b_st[11] = c_st->st_mtime;
+    b_st[12] = c_st->st_ctime;
+
+    return 0;
+}
+
+long b_stat(char* fname,long* st) {
+    long r;
+    struct stat s;
+
+    r = c_stat(fname,&s);
+    _setstat(st,&s);
+
+    return r;
+}
+
+long b_fstat(long fd,long* st) {
+    long r;
+    struct stat s;
+
     r = c_fstat(fd,&s);
-    st[ 0] = s.st_dev;
-    st[ 1] = s.st_ino;
-    st[ 2] = s.st_mode;
-    st[ 3] = s.st_nlink;
-    st[ 4] = s.st_uid;
-    st[ 5] = s.st_gid;
-    st[ 6] = s.st_rdev;
-    st[ 7] = s.st_size;
-    st[ 8] = s.st_blksize;
-    st[ 9] = s.st_blocks;
-    st[10] = s.st_atime;
-    st[11] = s.st_mtime;
-    st[12] = s.st_ctime;
+    _setstat(st,&s);
 
     return r;
 }
@@ -209,7 +237,6 @@ long b_getuid() {
 }
 
 long b_pipe(long fd[]) {
-    /* TODO テストコードなし */
     int p[2];
     int r;
 
@@ -260,38 +287,18 @@ long b_mkdir(char* dir,long mode) {
     return c_mkdir(dir,mode);
 }
 
+long b_open(char* fname,long mode) {
+    return c_open(fname,mode);
+}
+
 /*
 TODO
 error = gtty(file, ttystat);
 
     The teletype modes of the open file designated by file is returned in the 3-word vector ttstat. A negative number returned indicates an error. (*) 
-error = mkdir(string, mode);
-
-    The directory specified by the string is made to exist with the specified access mode. A negative number returned indicates an error. (*) 
-file = open(string, mode);
-
-    The file specified by the string is opened for reading if mode is zero, for writing if mode is not zero. The open file designator is returned. A negative number returned indicates an error. (*) 
-printf(format, argl, ...);
-
-    See section 9.3 below. 
-printn(number, base);
-
-    See section 9.1 below. 
-putchar(char) ;
-
-    The character char is written on the standard output file. 
-nread = read(file, buffer, count);
-
-    Count bytes are read into the vector buffer from the open file designated by file. The actual number of bytes read are returned. A negative number returned indicates an error. (*) 
-error = seek(filet offset, pointer);
-
-    The I/O pointer on the open file designated by file is set to the value of the designated pointer plus the offset. A pointer of zero designates the beginning of the file. A pointer of one designates the current I/O pointer. A pointer of two designates the end of the file. A negative number returned indicates an error. (*) 
 error = setuid(id);
 
     The user-ID of the current process is set to id. A negative number returned indicates an error. (*) 
-error = stat(string, status);
-
-    The i-node of the file specified by the string is put in the 20-word vector status. A negative number returned indicates an error. (*) 
 error = stty(file, ttystat);
 
     The teletype modes of the open file designated by file is set from the 3-word vector ttystat. A negative number returned indicates an error. (*) 
@@ -319,10 +326,27 @@ long b_printf(char* fmt,...) {
     return result;
 }
 
+long b_printn(long n,long b) {
+    int a;
+
+    if ( (a=n/b) != 0 ) b_printn(a,b);
+    c_putchar(n % b + '0');
+
+    return 0;
+}
+
 long b_putchar(long n) {
     if ( n > 0xff ) b_putchar(n>>8);
     c_putchar(n&0xff);
     return 0;
+}
+
+long b_read(long fd,char* buf,long size) {
+    return c_read(fd,buf,size);
+}
+
+long b_seek(long fd,long offset,long when) {
+    return c_lseek(fd,offset,when);
 }
 
 long b_unlink(char* name) {
