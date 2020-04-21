@@ -15,6 +15,9 @@ struct timeval {
     long        tv_usec;    /* マイクロ秒 */
 };
 
+/* TODO もしかして関数の戻り値はerrnoの値なのかも
+ */
+
 int     (*c_chdir)(const char*);
 int     (*c_chmod)(const char*,unsigned int);
 int     (*c_chown)(const char*,int,int);
@@ -38,6 +41,7 @@ int     (*c_pipe)(int*);
 int     (*c_printf)(const char*,...);
 int     (*c_putchar)(int);
 long    (*c_read)(int,void*,size_t);
+int     (*c_setuid)(int);
 char*   (*c_setlocale)(int,const char*);
 int     (*c_stat)(const char*,struct stat*);
 size_t  (*c_strftime)(char*,size_t,const char*,void*);
@@ -86,6 +90,7 @@ void __init() {
     c_putchar       = dlsym(h,"putchar");
     c_read          = dlsym(h,"read");
     c_lseek         = dlsym(h,"lseek");
+    c_setuid        = dlsym(h,"setuid");
     c_setlocale     = dlsym(h,"setlocale");
     c_strftime      = dlsym(h,"strftime");
     c_tcgetattr     = dlsym(h,"tcgetattr");
@@ -311,12 +316,9 @@ long b_open(char* fname,long mode,...) {
     return c_open(fname,mode);
 }
 
-/*
-TODO
-error = setuid(id);
-
-    The user-ID of the current process is set to id. A negative number returned indicates an error. (*) 
-*/
+long b_setuid(long id,...) {
+    return c_setuid(id);
+}
 
 long b_time(long tm[],...) {
     int r;
