@@ -1,5 +1,6 @@
 #include <stdarg.h>
 #include <asm/stat.h>
+#include <asm/termios.h>
 #include <sys/syscall.h>
 #define NULL ((void*)0)
 #define EOF (-1)
@@ -40,6 +41,8 @@ long    (*c_read)(int,void*,size_t);
 char*   (*c_setlocale)(int,const char*);
 int     (*c_stat)(const char*,struct stat*);
 size_t  (*c_strftime)(char*,size_t,const char*,void*);
+int     (*c_tcgetattr)(int,struct termios*);
+int     (*c_tcsetattr)(int,int,struct termios*);
 long    (*c_lseek)(int,long,int);
 int     (*c_unlink)(const char*);
 int     (*c_vprintf)(const char*,va_list);
@@ -85,6 +88,8 @@ void __init() {
     c_lseek         = dlsym(h,"lseek");
     c_setlocale     = dlsym(h,"setlocale");
     c_strftime      = dlsym(h,"strftime");
+    c_tcgetattr     = dlsym(h,"tcgetattr");
+    c_tcsetattr     = dlsym(h,"tcsetattr");
     c_unlink        = dlsym(h,"unlink");
     c_vprintf       = dlsym(h,"vprintf");
     c_wait          = dlsym(h,"wait");
@@ -246,7 +251,7 @@ long b_pipe(long fd[]) {
     return r;
 }
 
-long b_gtty(long fd,long res[]) {
+long b_gtty(long fd,long res[],...) {
     /*
      * TODO 3個値を返すらしい
      * このうちどれを返すかは調べる必要あり
@@ -260,13 +265,28 @@ long b_gtty(long fd,long res[]) {
      *   short   sg_flags;       // mode flags
      * };
      */
-//    struct termio buff;
-//    int r;
+    struct termios buff;
+    int r;
 
-//    r = ioctl(fd,&buf);
-    return 0;
+    r = c_tcgetattr(fd,&buff);
+    res[0] = buff.c_cc[VERASE];
+    res[1] = buff.c_cc[VKILL];
+    res[2] = buff.c_cflag;
 
-     
+    return r;
+}
+
+long b_stty(long fd,long res[],...) {
+    // TODO gtty参照
+    struct termios buff;
+    int r;
+
+    if ( (r=c_tcgetattr(fd,&buff)) ) return r;
+
+    buff.c_cc[VERASE]  = res[0];
+    buff.c_cc[VKILL]   = res[1];
+    buff.c_cflag       = res[2];
+    return c_tcsetattr(fd,TCSANOW,&buff);
 }
 
 long b_lchar(char* s,long i,long c) {
@@ -293,15 +313,9 @@ long b_open(char* fname,long mode) {
 
 /*
 TODO
-error = gtty(file, ttystat);
-
-    The teletype modes of the open file designated by file is returned in the 3-word vector ttstat. A negative number returned indicates an error. (*) 
 error = setuid(id);
 
     The user-ID of the current process is set to id. A negative number returned indicates an error. (*) 
-error = stty(file, ttystat);
-
-    The teletype modes of the open file designated by file is set from the 3-word vector ttystat. A negative number returned indicates an error. (*) 
 */
 
 long b_time(long tm[]) {

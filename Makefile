@@ -16,7 +16,7 @@ entry.s: libb.alias
 	./mkentry.sh $^ > $@
 
 libb.so: libb.c entry.s
-	gcc -g -Wall -fPIC -fno-builtin -shared $^ -o $@ -ldl
+	gcc -Wall -fPIC -fno-builtin -shared $^ -o $@ -ldl
 
 %: %.b
 	./bb1 $^ | llc - -o a.s

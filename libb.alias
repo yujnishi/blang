@@ -13,6 +13,8 @@ fork:b_fork@PLT
 fstat:b_fstat@PLT
 getchar:b_getchar@PLT
 getuid:b_getuid@PLT
+gtty:b_gtty@PLT
+stty:b_stty@PLT
 pipe:b_pipe@PLT
 printf:b_printf@PLT
 putchar:b_putchar@PLT
