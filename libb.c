@@ -101,7 +101,7 @@ void __init() {
 }
 
 
-long b_char(char* s,long i) {
+long b_char(char* s,long i,...) {
     int ret;
 
     ret = s[i];
@@ -109,27 +109,27 @@ long b_char(char* s,long i) {
     return ret;
 }
 
-long b_chdir(char* dir) {
+long b_chdir(char* dir,...) {
     return c_chdir(dir);
 }
 
-long b_chmod(char* fname,long mode) {
+long b_chmod(char* fname,long mode,...) {
     return c_chmod(fname,mode);
 }
 
-long b_chown(char* fname,long owner) {
+long b_chown(char* fname,long owner,...) {
     return c_chown(fname,owner,-1);
 }
 
-long b_close(long fd) {
+long b_close(long fd,...) {
     return c_close(fd);
 }
 
-long b_creat(char* fname,long mode) {
+long b_creat(char* fname,long mode,...) {
     return c_creat(fname,mode);
 }
 
-long b_ctime(long _t[],char* date) {
+long b_ctime(long _t[],char* date,...) {
     time_t t;
     char* old_locale;
     void* tm;
@@ -142,7 +142,7 @@ long b_ctime(long _t[],char* date) {
     return 0;
 }
 
-long b_dup(long fd) {
+long b_dup(long fd,...) {
     return c_dup(fd);
 }
 
@@ -159,7 +159,7 @@ long b_execl(char* cmd,...) {
     return c_execv(cmd,(const char**)argv);
 }
 
-long b_execv(char* cmd,char* _argv[],long argc) {
+long b_execv(char* cmd,char* _argv[],long argc,...) {
     int i;
     char* argv[1024];
 
@@ -169,12 +169,12 @@ long b_execv(char* cmd,char* _argv[],long argc) {
     return c_execv(cmd,(const char**) argv);
 }
 
-long b_exit() {
+long b_exit(long dummy,...) {
     c_exit(0);
     return 0;
 }
 
-long b_fork() {
+long b_fork(long dummy,...) {
     return c_fork();
 }
 
@@ -213,7 +213,7 @@ long _setstat(long* b_st,struct stat* c_st) {
     return 0;
 }
 
-long b_stat(char* fname,long* st) {
+long b_stat(char* fname,long* st,...) {
     long r;
     struct stat s;
 
@@ -223,7 +223,7 @@ long b_stat(char* fname,long* st) {
     return r;
 }
 
-long b_fstat(long fd,long* st) {
+long b_fstat(long fd,long* st,...) {
     long r;
     struct stat s;
 
@@ -233,15 +233,15 @@ long b_fstat(long fd,long* st) {
     return r;
 }
 
-long b_getchar() {
+long b_getchar(long dummy,...) {
     return c_getchar();
 }
 
-long b_getuid() {
+long b_getuid(long dummy,...) {
     return c_getuid();
 }
 
-long b_pipe(long fd[]) {
+long b_pipe(long fd[],...) {
     int p[2];
     int r;
 
@@ -289,7 +289,7 @@ long b_stty(long fd,long res[],...) {
     return c_tcsetattr(fd,TCSANOW,&buff);
 }
 
-long b_lchar(char* s,long i,long c) {
+long b_lchar(char* s,long i,long c,...) {
     int r;
 
     r = c;
@@ -299,15 +299,15 @@ long b_lchar(char* s,long i,long c) {
     return r;
 }
 
-long b_link(char* old,char* new) {
+long b_link(char* old,char* new,...) {
     return c_link(old,new);
 }
 
-long b_mkdir(char* dir,long mode) {
+long b_mkdir(char* dir,long mode,...) {
     return c_mkdir(dir,mode);
 }
 
-long b_open(char* fname,long mode) {
+long b_open(char* fname,long mode,...) {
     return c_open(fname,mode);
 }
 
@@ -318,7 +318,7 @@ error = setuid(id);
     The user-ID of the current process is set to id. A negative number returned indicates an error. (*) 
 */
 
-long b_time(long tm[]) {
+long b_time(long tm[],...) {
     int r;
     struct timeval tv;
 
@@ -340,7 +340,7 @@ long b_printf(char* fmt,...) {
     return result;
 }
 
-long b_printn(long n,long b) {
+long b_printn(long n,long b,...) {
     int a;
 
     if ( (a=n/b) != 0 ) b_printn(a,b);
@@ -349,28 +349,28 @@ long b_printn(long n,long b) {
     return 0;
 }
 
-long b_putchar(long n) {
+long b_putchar(long n,...) {
     if ( n > 0xff ) b_putchar(n>>8);
     c_putchar(n&0xff);
     return 0;
 }
 
-long b_read(long fd,char* buf,long size) {
+long b_read(long fd,char* buf,long size,...) {
     return c_read(fd,buf,size);
 }
 
-long b_seek(long fd,long offset,long when) {
+long b_seek(long fd,long offset,long when,...) {
     return c_lseek(fd,offset,when);
 }
 
-long b_unlink(char* name) {
+long b_unlink(char* name,...) {
     return c_unlink(name);
 }
 
-long b_wait() {
+long b_wait(long dummy,...) {
     return c_wait(NULL);
 }
 
-long b_write(long fd,char* buf,long size) {
+long b_write(long fd,char* buf,long size,...) {
     return c_write(fd,buf,size);
 }
