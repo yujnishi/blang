@@ -271,10 +271,6 @@ char* tostr_val(char* buf,int is_type,struct val_list* val) {
     return buf;
 }
 
-struct tree* gencode_load(struct tree* val) {
-
-}
-
 
 int yylex();
 
@@ -366,7 +362,7 @@ int gencode_val(char* buf,struct tree* v,int is_type,int is_ptr) {
     tp = is_type ? "i64" : "";
     sep = (is_type || is_ptr) ? " " : "";
     buf[0] = '\0';
-    if ( ((long)v) < 1024 )     sprintf(buf,"%s%s%s%%%d",tp,ptr,sep,(int)(long)v);
+    if ( ((long)v) < 1024 )     sprintf(buf,"%s%s%s%%__val%d",tp,ptr,sep,(int)(long)v);
     else if ( v->type == NAME ) {
         struct val_list* p;
 
@@ -474,7 +470,7 @@ struct tree* gencode_output(char* file,int line,char* op,...) {
         case '%': fputc('%',fi); break;
         case 'd': fprintf(fi,"%d",va_arg(ap,int)); break;
         case 's': fprintf(fi,"%s",va_arg(ap,char*)); break;
-        case 'r': fprintf(fi,"%%%d",ret=(void*)(long)getvnum()); break;
+        case 'r': fprintf(fi,"%%__val%d",ret=(void*)(long)getvnum()); break;
         case 'v':
             gencode_val(buf,va_arg(ap,struct tree*),0,0);
             fprintf(fi,"%s",buf);
@@ -702,7 +698,7 @@ struct tree* gencode_stmt(struct tree* stmt) {
             abort();
             exit(1);
         } else if ( v->is_define ) ftype = "";
-        printf("  %%%d = call i64 %s %s(",ret=(void*)(long)getvnum(),ftype,gencode_name(stmt->t.t1));
+        printf("  %%__val%d = call i64 %s %s(",ret=(void*)(long)getvnum(),ftype,gencode_name(stmt->t.t1));
         delim = "";
         for ( p = args; p; p = p->l.next ) {
             char* type;
@@ -819,6 +815,7 @@ int gencode_func(char* name,struct tree* vals,struct tree* stmts) {
     struct tree* val;
     int v;
 
+    /* TODO 全てを可変長引数に */
     val = NULL;
     printf("define i64 @%s",name);
     v = isret = vnum = lnum = is_pred = prev_vnum = 0;
@@ -1002,6 +999,7 @@ int gencode(struct tree* root) {
     char s[2048];
     struct tree* t;
 }
+/* TODO 最初autoからプログラム始めるとパース結果が変になる */
 %start start
 %type <t> lvalue rvalue assign inc-dec unary rvalue-list auto-defs ival-list statement statement-list
 %type <t> name-list
