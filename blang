@@ -1,0 +1,4 @@
+#!/bin/sh
+
+/usr/libexec/blang/bb1 "$1" | llc | gcc -x assembler -lb -
+
