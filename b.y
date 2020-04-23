@@ -1213,6 +1213,7 @@ int main(int argc,char* argv[]) {
 
     if ( argc < 2 ) return 0;
 
+    /* TODO llvmのソースにファイル名を設定 */
     yyin = fopen(argv[1],"r");
     return yyparse();
 }
