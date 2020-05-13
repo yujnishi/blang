@@ -3,7 +3,7 @@
 ## コンパイル
 まず必要なソフトウェアのインストール(ほかに必要なものがあったら適宜インストールしてください)
 ```
-sudo yum install flex bison llvm
+sudo yum install flex bison llvm llvm-devel
 ```
 コンパイル
 ```

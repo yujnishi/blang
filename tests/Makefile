@@ -1,5 +1,12 @@
 .PHONY: tests build
-.PRECIOUS: %.ll
+.PRECIOUS: %.ll %.res
+
+LLVM_VERSION_MAJOR=$(shell llvm-config --version | cut -d. -f1)
+
+BFLAGS = -D
+ifeq ($(LLVM_VERSION_MAJOR),3)
+BFLAGS += -3
+endif
 
 srcs  = $(wildcard *.b)
 objs  = $(patsubst %.b,%,$(srcs))
@@ -23,7 +30,7 @@ build: $(objs)
 	llc $^ -O0 -o $@
 
 %.ll: %.b ../bb1
-	../bb1 $< > $@
+	../bb1 $(BFLAGS) $< > $@
 
 clean:
 	rm -fr $(cases) $(objs) *.ll *.s *.res *.tmp core.*

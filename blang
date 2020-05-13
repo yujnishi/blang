@@ -1,4 +1,16 @@
 #!/bin/sh
 
-/usr/libexec/blang/bb1 "$1" | llc | gcc -x assembler -lb -
+PATH=/usr/bin:/usr/libexec/blang
+test "$EXT_PATH" != "" && PATH=$EXT_PATH:$PATH
+export PATH
 
+CFLAGS=
+test "$LD_LIBRARY_PATH" != "" && CFLAGS=-L$LD_LIBRARY_PATH
+
+
+BB1OPTS="-n $0"
+
+LLVM_VERSION_MAJOR=`llvm-config --version | cut -d. -f1`
+test $LLVM_VERSION_MAJOR -lt 4 && BB1OPTS="$BB1OPTS -3"
+
+bb1 $BB1OPTS "$1" | llc | gcc -x assembler $CFLAGS -lb -

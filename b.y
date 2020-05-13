@@ -4,8 +4,11 @@
 #include <string.h>
 #include <stdlib.h>
 #include <ctype.h>
-#include <llvm-c/Core.h>
+#include <unistd.h>
 #include "b.tab.h"
+
+const char* cmd = "bb1";
+int is_old_llvm = 0;
 
 
 int yyerror(char const*);
@@ -345,7 +348,7 @@ char* gencode_name(struct tree* v) {
     name_buf[0] = '\0';
     p = find_val(v->s);
     if ( p == NULL ) {
-        fprintf(stderr,"unknown symbol %s\n",v->s);
+        fprintf(stderr,"%s: unknown symbol %s\n",cmd,v->s);
         abort();
         exit(1);
     }
@@ -457,12 +460,28 @@ struct tree* gencode_output(char* file,int line,char* op,...) {
     struct tree* ret;
     char buf[256];
     char* p;
+    char* skip_start;
+
+    // TODO 一応古いバージョンのllvmに対応
+    //      そのうち捨てるコードなので一時しのぎ
+    skip_start = NULL;
+    skip_start = skip_start ? skip_start : strstr(op,"load i64,");
+    skip_start = skip_start ? skip_start : strstr(op,"getelementptr inbounds");
 
     isret = 0;
     ret = NULL;
     fi = stdout;
     va_start(ap,op);
     for ( p = op; *p; p++ ) {
+        // TODO 一応古いバージョンのllvmに対応
+        //      そのうち捨てるコードなので一時しのぎ
+        if ( is_old_llvm && p == skip_start ) {
+            while ( *p != ' ' ) { fputc(*p,fi); p++; }
+            while ( *p != ',' ) p++;
+            if ( !strncmp(skip_start,"getelementptr inbounds",22) ) va_arg(ap,char*);
+            continue;
+        }
+
         if ( *p != '%' ) { fputc(*p,fi); continue; }
 
         p++;
@@ -484,7 +503,7 @@ struct tree* gencode_output(char* file,int line,char* op,...) {
             fprintf(fi,"%s",buf);
             break;
         default:
-            fprintf(stderr,"unknown error\n");
+            fprintf(stderr,"%s: unknown error\n",cmd);
             abort();
             exit(1);
         }
@@ -689,15 +708,19 @@ struct tree* gencode_stmt(struct tree* stmt) {
         ftype = "(...)";
         if ( (v=find_val(stmt->t.t1->s)) == NULL ) {
             if ( add_val(0,1,new_type(TYPE_FUNCTION,new_t(TREE_DEFUN,stmt->t.t1,(void*)(long)n,NULL)),stmt->t.t1->s) == NULL ) {
-                fprintf(stderr,"redefine %s\n",stmt->t.t1->s);
+                fprintf(stderr,"%s: redefine %s\n",cmd,stmt->t.t1->s);
                 abort();
                 exit(1);
             }
         } else if ( v->type && v->type->type != TYPE_FUNCTION ) {
-            fprintf(stderr,"not function %s\n",stmt->t.t1->s);
+            fprintf(stderr,"%s: not function %s\n",cmd,stmt->t.t1->s);
             abort();
             exit(1);
         } else if ( v->is_define ) ftype = "";
+        // TODO 一応古いバージョンのllvmに対応
+        //      そのうち捨てるコードなので一時しのぎ
+        if ( is_old_llvm && !strcmp(ftype,"(...)") ) ftype = "(...)*";
+
         printf("  %%__val%d = call i64 %s %s(",ret=(void*)(long)getvnum(),ftype,gencode_name(stmt->t.t1));
         delim = "";
         for ( p = args; p; p = p->l.next ) {
@@ -957,7 +980,7 @@ int gencode(struct tree* root) {
         case TREE_DEFUN:
             break;
         default:
-            fprintf(stderr,"unknown type\n");
+            fprintf(stderr,"%s: unknown type\n",cmd);
             break;
         }
     }
@@ -978,7 +1001,7 @@ int gencode(struct tree* root) {
             gencode_func(name,def->t.t2,def->t.t3);
             break;
         default:
-            fprintf(stderr,"unknown type\n");
+            fprintf(stderr,"%s: unknown type\n",cmd);
             break;
         }
     }
@@ -1197,23 +1220,52 @@ constant: DIGIT { $$ = new_s(DIGIT,$1); }
 int yyerror(char const* str) {
     extern int yylineno;
 
-    fprintf(stderr,"error:(%d) %s\n",yylineno,str);
+    fprintf(stderr,"%s: error:(%d) %s\n",cmd,yylineno,str);
+}
+
+void usage(FILE* fi) {
+    fprintf(fi,"usage: %s [-3YLDh] [-n CMDNAME] file\n",cmd);
+    fprintf(fi,"\n");
+    fprintf(fi,"  -h             print this message\n");
+    fprintf(fi,"  -3             output code for llvm under ver.3\n");
+    fprintf(fi,"  -Y             output yacc debug message\n");
+    fprintf(fi,"  -L             output lex debug message\n");
+    fprintf(fi,"  -D             output debug message to llvm source code\n");
+    fprintf(fi,"  -n CMDNAME     use command name CMDNAME\n");
+    fprintf(fi,"\n");
 }
 
 int main(int argc,char* argv[]) {
     extern int yy_flex_debug;
     extern FILE* yyin;
-    int r;
+    int r,opt;
+
+    yy_flex_debug = 0;
+    yydebug       = 0;
+    debug         = 0;
+
+    cmd = argv[0];
+    while ((opt = getopt(argc, argv, "3YLDn:h")) != -1) {
+        switch (opt) {
+        case '3': is_old_llvm   = 1;      break;
+        case 'L': yy_flex_debug = 1;      break;
+        case 'Y': yydebug       = 1;      break;
+        case 'D': debug         = 1;      break;
+        case 'n': cmd           = optarg; break;
+
+        case 'h': usage(stdout); return 0;
+        default:  usage(stderr); return -1;
+        }
+
+    }
+    if ( optind >= argc ) { usage(stderr); return -1; }
+
 
     init_type();
 
-    yy_flex_debug = 0;
-    yydebug = 0;
-    debug = 1;
-
-    if ( argc < 2 ) return 0;
-
-    /* TODO llvmのソースにファイル名を設定 */
-    yyin = fopen(argv[1],"r");
+    // TODO 一応古いバージョンのllvmに対応
+    if ( !is_old_llvm ) output("source_filename = \"%s\"",argv[optind]);
+    printf("\n");
+    yyin = fopen(argv[optind],"r");
     return yyparse();
 }

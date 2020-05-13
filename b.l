@@ -1,6 +1,5 @@
 %{
 #include <stdio.h>
-#include <llvm-c/Core.h>
 #include "b.tab.h"
 
 %}
